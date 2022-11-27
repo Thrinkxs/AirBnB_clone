@@ -1,123 +1,60 @@
 #!/usr/bin/python3
-
-"""
-
-Contains the FileStorage class model
-
-
-
-
-
-"""
-
+'''AirBnB clone project File Storage'''
 import json
-
-
-
 from models.base_model import BaseModel
-
 from models.user import User
-
 from models.state import State
-
-from models.amenity import Amenity
-
 from models.city import City
-
+from models.amenity import Amenity
 from models.place import Place
-
 from models.review import Review
 
 
-
-classes = {"Amenity": Amenity, "BaseModel": BaseModel, "City": City,
-           
-           "Place": Place, "Review": Review, "State": State, "User": User}
-
-
-
 class FileStorage:
-    
+    """ This is a storage engine for AirBnB clone project
+    Class Methods:
+        all: Returns the object
+        new: updates the dictionary id
+        save: Serializes, or converts Python objects into JSON strings
+        reload: Deserializes, or converts JSON strings into Python objects.
+    Class Attributes:
+        __file_path (str): The name of the file to save objects to.
+        __objects (dict): A dictionary of instantiated objects.
+        class_dict (dict): A dictionary of all the classes.
     """
 
-    serializes instances to a JSON file and
-
-    deserializes JSON file to instances
-
-    """
-    
-
-    
-    __file_path = "file.json"
-    
+    __file_path = 'file.json'
     __objects = {}
-    
+    class_dict = {"BaseModel": BaseModel, "User": User, "Place": Place,
+                  "Amenity": Amenity, "City": City, "Review": Review,
+                  "State": State}
 
-    
     def all(self):
-        
-        """
-
-        Returns the dictionary __objects
-
-        """
-        
+        '''Return dictionary of <class>.<id> : object instance'''
         return self.__objects
-    
 
-    
     def new(self, obj):
-        
-        """
+        '''Set new __objects to existing dictionary of instances'''
+        if obj:
+            key = '{}.{}'.format(obj.__class__.__name__, obj.id)
+            self.__objects[key] = obj
 
-        sets in __objects the `obj` with key <obj class name>.id
-
-        """
-        
-        self.__objects["{}.{}".format(obj.__class__.__name__, obj.id)] = obj
-        
-
-        
     def save(self):
-        
-        """
+        """Save/serialize obj dictionaries to json file"""
+        obj_dict = {}
 
-        Serialize __objects to the JSON file
+        for key, obj in self.__objects.items():
+            obj_dict[key] = obj.to_dict()
+        with open(self.__file_path, 'w', encoding="UTF-8") as f:
+            json.dump(obj_dict, f)
 
-        """
-        
-        with open(self.__file_path, mode="w") as f:
-            
-            dict_storage = {}
-            
-            for k, v in self.__objects.items():
-                
-                dict_storage[k] = v.to_dict()
-                
-            json.dump(dict_storage, f)
-            
-
-            
     def reload(self):
-        
-        """
-
-        Deserializes the JSON file to __objects
-
-        -> Only IF it exists!
-
-        """
-        
+        """Deserialize/convert obj dicts back to instances, if it exists"""
         try:
-            
-            with open(self.__file_path, 'r') as f:
-                
-                jo = json.load(f)
-                
-            for key in jo:
-                
-                self.__objects[key] = classes[jo[key]["__class__"]](**jo[key])
-                
-        except:
-            
+            with open(self.__file_path, 'r', encoding="UTF-8") as f:
+                new_obj_dict = json.load(f)
+            for key, value in new_obj_dict.items():
+                obj = self.class_dict[value['__class__']](**value)
+                self.__objects[key] = obj
+        except FileNotFoundError:
             pass
